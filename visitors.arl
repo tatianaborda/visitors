@@ -1,0 +1,40 @@
+archetype visitors(owner : address)
+
+variable costofvisits : tez = 0tz
+variable durationbetweenvisits : duration = 1m
+
+asset visitor identified by addr{
+    addr : address;
+    visits : nat = 0;
+    visitvalue : tez = 0tz;
+    time : date = now;
+}
+
+entry register (a_visitor : address) {
+  called by caller
+  effect {
+    visitor.add({addr = a_visitor});
+  }
+}
+
+entry makevisit() {
+  called by visitor
+  require {
+    r1 : visitor.contains(caller);  
+    r2 : visitor[caller].time + durationbetweenvisits < now otherwise "Sorry, you have to wait one minute between every visit"; 
+  }
+  effect {
+      visitor.add_update(caller, {  visits += 1 ; visitvalue +=1tz ; time = now});
+      costofvisits := visitor[caller].visitvalue;
+  }
+}
+
+entry withdraw() {
+  called by owner otherwise "EXPECTS_OWNER"
+  effect {
+      transfer costofvisits to caller
+    }
+}
+
+
+  
